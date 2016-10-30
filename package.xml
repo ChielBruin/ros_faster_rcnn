@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>ROS-faster-rcnn</name>
+  <name>ros_faster_rcnn</name>
   <version>0.0.1</version>
   <description>The a package that wraps py-faster-rcnn in a ROS node.</description>
 

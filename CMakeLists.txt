@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ROS-faster-rcnn)
+project(ros_faster_rcnn)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+	message_generation
+	std_msgs
+)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -12,18 +15,17 @@ find_package(catkin REQUIRED)
 ## Declare ROS messages, services and actions ##
 ################################################
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+# Generate messages in the 'msg' folder
+add_message_files(
+	FILES
+	Detection.msg
+)
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+	DEPENDENCIES
+	std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
