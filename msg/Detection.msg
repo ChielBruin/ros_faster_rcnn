@@ -1,6 +1,6 @@
 Header header
 
-string object
+string object_class
 float32 p
 
 uint16 x
