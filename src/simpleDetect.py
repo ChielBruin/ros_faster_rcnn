@@ -92,7 +92,19 @@ def imageCallback(im):
 						  cls_scores[:, np.newaxis])).astype(np.float32)
 		keep = nms(dets, NMS_THRESH)
 		dets = dets[keep, :]
-		# //TODO Publish here
+		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+		for i in inds:
+			bbox = dets[i, :4]
+			score = dets[i, -1]
+			
+			msg = Detection()
+			msg.x = bbox[0]
+			msg.y = bbox[1]
+			msg.width =  bbox[2] - bbox[0]
+			msg.height = bbox[3] - bbox[1]
+			msg.object_class = CLASSES[cls_ind]
+			msg.p = score
+			pub_detections.publish(msg)
 
 def parse_args():
     """Parse input arguments."""
