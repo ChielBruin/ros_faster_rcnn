@@ -5,6 +5,7 @@ find_package(catkin REQUIRED
 	message_generation
 	std_msgs
 	cv_bridge
+	sensor_msgs
 )
 
 catkin_python_setup()
@@ -17,12 +18,22 @@ catkin_python_setup()
 add_message_files(
 	FILES
 	Detection.msg
+	DetectionArray.msg
+	DetectionFull.msg
+)
+
+## Generate services in the 'srv' folder
+add_service_files(
+	FILES
+	Detect.srv
+	DetectFull.srv
 )
 
 # Generate added messages and services with any dependencies listed here
 generate_messages(
 	DEPENDENCIES
 	std_msgs
+	sensor_msgs
 )
 
 ################################################
@@ -33,7 +44,9 @@ generate_messages(
 ## catkin specific configuration ##
 ###################################
 
-catkin_package( )
+catkin_package(
+	CATKIN_DEPENDS message_runtime
+)
 
 ###########
 ## Build ##

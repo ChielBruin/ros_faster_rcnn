@@ -1,0 +1,5 @@
+# The image to run the detection on
+sensor_msgs/Image image
+---
+# The resulting detections
+DetectionArray detections
