@@ -22,13 +22,6 @@ add_message_files(
 	DetectionFull.msg
 )
 
-## Generate services in the 'srv' folder
-add_service_files(
-	FILES
-	Detect.srv
-	DetectFull.srv
-)
-
 # Generate added messages and services with any dependencies listed here
 generate_messages(
 	DEPENDENCIES
