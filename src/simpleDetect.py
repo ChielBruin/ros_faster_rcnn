@@ -32,8 +32,6 @@ from cv_bridge import CvBridge, CvBridgeError
 RUNNING = False
 IMAGE = Image()
 
-CLASSES = []
-
 NETS = {'vgg16': ('VGG16',
                   'VGG16_faster_rcnn_final.caffemodel'),
         'zf': ('ZF',
@@ -79,25 +77,26 @@ def parse_args():
     return args
     
 def parseClasses(classFile):
-	global CLASSSES
 	with open(classFile) as f:
 		content = f.readlines()
-	CLASSES = ['__background__'] + map(lambda x: x[:-1], content)
+	return ['__background__'] + map(lambda x: x[:-1], content)
 
-def generateDetections (scores, boxes):
+def generateDetections (scores, boxes, classes):
 	# Visualize detections for each class
 	CONF_THRESH = 0.8
 	NMS_THRESH = 0.3	
 	res = []
 
-	for cls_ind, cls in enumerate(CLASSES[1:]):
+	for cls_ind, cls in enumerate(classes[1:]):
 		cls_ind += 1 # because we skipped background
 		cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
 		cls_scores = scores[:, cls_ind]
 		dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])).astype(np.float32)
 		keep = nms(dets, NMS_THRESH)
 		dets = dets[keep, :]
+
 		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+
 		for i in inds:
 			bbox = dets[i, :4]
 			score = dets[i, -1]
@@ -107,7 +106,7 @@ def generateDetections (scores, boxes):
 			msg.y = bbox[1]
 			msg.width =  bbox[2] - bbox[0]
 			msg.height = bbox[3] - bbox[1]
-			msg.object_class = CLASSES[cls_ind]
+			msg.object_class = classes[cls_ind]
 			msg.p = score
 			res.append(msg)
 	return res
@@ -145,12 +144,16 @@ if __name__ == '__main__':
 		cfg.GPU_ID = args.gpu_id
 	NET = caffe.Net(prototxt, caffemodel, caffe.TEST)
 
-	rospy.loginfo('\n\nLoaded network %s', caffemodel)
+	rospy.loginfo('Loaded network %s', caffemodel)
+	rospy.loginfo('Running detection with these classes: %s', str(classes))
 	rospy.loginfo('Warmup started')
 	im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
+	timer = Timer()
+	timer.tic()
 	for i in xrange(2):
 		_, _= im_detect(NET, im)
-	rospy.loginfo('Warmup done. Starting node')
+	timer.toc()
+	rospy.loginfo('Warmup done in %f seconds. Starting node', timer.total_time)
 	
 	rate = rospy.Rate(10)
 	bridge = CvBridge()
@@ -158,8 +161,8 @@ if __name__ == '__main__':
 		if (RUNNING):
 			rate.sleep()
 			cv_image = bridge.imgmsg_to_cv2(IMAGE)
-			scores, boxes = detect(cv_image)
-			detections = generateDetections(scores, boxes)
+			(scores, boxes) = detect(cv_image)
+			detections = generateDetections(scores, boxes, classes)
 			if (pub_single.get_num_connections() > 0):
 				for msg in detections:
 					pub_single.publish(msg)
@@ -173,6 +176,7 @@ if __name__ == '__main__':
 					msg = DetectionFull()
 					msg.detections = array
 					msg.image = getResultImage(detections, IMAGE)
+					pub_full.publish(msg)
 				else :
 					pub_array.publish(array)
 				
