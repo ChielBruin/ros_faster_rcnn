@@ -13,6 +13,8 @@
   <author email="chielbruin@tele2.nl">Chiel Bruin</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  
+  <run_depend>cv_bridge</run_depend>
 	<!-- The dependencies are not included yet, but when the py-faster-rcnn demo.py runs this should also run.-->
 
   <export> </export>

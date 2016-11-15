@@ -4,6 +4,7 @@ project(ros_faster_rcnn)
 find_package(catkin REQUIRED
 	message_generation
 	std_msgs
+	cv_bridge
 )
 
 catkin_python_setup()
@@ -43,6 +44,9 @@ catkin_package( )
 #############
 
 catkin_install_python(PROGRAMS src/simpleDetect.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+catkin_install_python(PROGRAMS src/imageLoader.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executables and/or libraries for installation
