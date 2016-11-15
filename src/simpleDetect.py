@@ -27,9 +27,8 @@ import argparse
 import rospy
 from ros_faster_rcnn.msg import *
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+from cv_bridge import CvBridge, CvBridgeError
 
-BRIDGE = CvBridge()
 RUNNING = False
 IMAGE = Image()
 
@@ -44,28 +43,25 @@ NETS = {'vgg16': ('VGG16',
 def detect(image):
 	"""Detect object classes in an image using pre-computed object proposals."""
 	global NET
-	global BRIDGE
-
-	im = BRIDGE.imgmsg_to_cv2(image, desired_encoding="passthrough")
 	
 	# Detect all object classes and regress object bounds
 	rospy.loginfo("Starting detection")
 	timer = Timer()
 	timer.tic()
-	scores, boxes = im_detect(NET, im)
+	scores, boxes = im_detect(NET, image)
 	timer.toc()
 	rospy.loginfo('Detection took %f seconds for %d object proposals', timer.total_time, boxes.shape[0])
 	return (scores, boxes)
 			
 def imageCallback(im):
-	global CURR_IMAGE
+	global IMAGE
 	global RUNNING
 	rospy.loginfo('Image received')
 	if (RUNNING):
 		rospy.logwarn('Detection already running, message omitted')
 	else:
 		RUNNING = True
-		CURR_IMAGE = im
+		IMAGE = im
 
 def parse_args():
     """Parse input arguments."""
@@ -91,17 +87,17 @@ def parseClasses(classFile):
 def generateDetections (scores, boxes):
 	# Visualize detections for each class
 	CONF_THRESH = 0.8
-	NMS_THRESH = 0.3
+	NMS_THRESH = 0.3	
+	res = []
+
 	for cls_ind, cls in enumerate(CLASSES[1:]):
 		cls_ind += 1 # because we skipped background
 		cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
 		cls_scores = scores[:, cls_ind]
-		dets = np.hstack((cls_boxes,
-						  cls_scores[:, np.newaxis])).astype(np.float32)
+		dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])).astype(np.float32)
 		keep = nms(dets, NMS_THRESH)
 		dets = dets[keep, :]
 		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
-		res = []
 		for i in inds:
 			bbox = dets[i, :4]
 			score = dets[i, -1]
@@ -114,7 +110,7 @@ def generateDetections (scores, boxes):
 			msg.object_class = CLASSES[cls_ind]
 			msg.p = score
 			res.append(msg)
-		return res
+	return res
 
 def getResultImage (detections, image):
 	# TODO
@@ -157,21 +153,23 @@ if __name__ == '__main__':
 	rospy.loginfo('Warmup done. Starting node')
 	
 	rate = rospy.Rate(10)
+	bridge = CvBridge()
 	while not rospy.is_shutdown():
 		if (RUNNING):
-			rospy.loginfo('Starting new detection')
 			rate.sleep()
-			detections = generateDetections(detect(IMAGE))
-			if (pub_single.getNumSubscribers() > 0):
+			cv_image = bridge.imgmsg_to_cv2(IMAGE)
+			scores, boxes = detect(cv_image)
+			detections = generateDetections(scores, boxes)
+			if (pub_single.get_num_connections() > 0):
 				for msg in detections:
 					pub_single.publish(msg)
 					
-			if (pub_array.getNumSubscribers() > 0 or pub_full.getNumSubscribers() > 0):
+			if (pub_array.get_num_connections() > 0 or pub_full.get_num_connections() > 0):
 				array = DetectionArray()
 				array.size = len(detections)
 				array.data = detections
 				
-				if (pub_full.getNumSubscribers() > 0):
+				if (pub_full.get_num_connections() > 0):
 					msg = DetectionFull()
 					msg.detections = array
 					msg.image = getResultImage(detections, IMAGE)
