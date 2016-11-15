@@ -1,2 +1,21 @@
-# ROS-faster-rcnn
-A ROS node using faster RCNN to perform image recognition
+# ROS_faster_rcnn
+A [ROS] (http://www.ros.org/) wrapper for the [python implementation] (https://github.com/rbgirshick/py-faster-rcnn) of [faster-RCNN] (https://github.com/ShaoqingRen/faster_rcnn). This wrapper is based on `demo.py`, that is included in the python implementation. 
+> **Faster** R-CNN is an object detection framework based on deep convolutional networks, which includes a Region Proposal Network (RPN) and an Object Detection Network. Both networks are trained for sharing convolutional layers for fast testing. 
+> 
+> Faster R-CNN was initially described in an [arXiv tech report](http://arxiv.org/abs/1506.01497).
+
+## Installation
+- Clone the repository
+ - `git clone https://github.com/ChielBruin/ros_faster_rcnn.git --recursive`
+ - run `git submodule --init --recursive`, when the modules are not correctly cloned
+- Install py-faster-rcnn located in the libraries folder
+ - Follow the guide provided [here](https://github.com/rbgirshick/py-faster-rcnn#installation-sufficient-for-the-demo)
+ - If you are running Ubuntu 15 or 16, check [this](https://gist.github.com/wangruohui/679b05fcd1466bb0937f) or [this](https://github.com/rbgirshick/py-faster-rcnn#installation-sufficient-for-the-demo) guide (respectively) for the installation of the caffe dependency respectively
+- Install all the needed ROS dependencies
+ - run `rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO`, where $ROS_DISTRO is your desired version of ROS
+ 
+## Development notes
+This ROS node is being developed as a part of [this](https://github.com/ChielBruin/tomatenplukkers) repository. Because it is still in development, it may not work exactly as intended. In addition, some features are still missing:
+- A ROS service to send an image and receive the detections
+- A ROS message that contains a list of detections instead of multiple messages containing a single detection
+- A ROS message containing the resulting image
