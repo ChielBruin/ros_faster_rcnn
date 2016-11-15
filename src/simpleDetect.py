@@ -118,7 +118,7 @@ def generateDetections (scores, boxes):
 
 def getResultImage (detections, image):
 	# TODO
-	for detection in detections:
+	#for detection in detections:
 		#image.drawDetection(detection)
 	return image
 	
