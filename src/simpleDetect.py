@@ -25,7 +25,7 @@ import caffe, os, sys, cv2
 import argparse
 
 import rospy
-from ros_faster_rcnn.msg import Detection
+from ros_faster_rcnn.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
@@ -55,31 +55,7 @@ def detect(image):
 	scores, boxes = im_detect(NET, im)
 	timer.toc()
 	rospy.loginfo('Detection took %f seconds for %d object proposals', timer.total_time, boxes.shape[0])
-
-	# Visualize detections for each class
-	CONF_THRESH = 0.8
-	NMS_THRESH = 0.3
-	for cls_ind, cls in enumerate(CLASSES[1:]):
-		cls_ind += 1 # because we skipped background
-		cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
-		cls_scores = scores[:, cls_ind]
-		dets = np.hstack((cls_boxes,
-						  cls_scores[:, np.newaxis])).astype(np.float32)
-		keep = nms(dets, NMS_THRESH)
-		dets = dets[keep, :]
-		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
-		for i in inds:
-			bbox = dets[i, :4]
-			score = dets[i, -1]
-			
-			msg = Detection()
-			msg.x = bbox[0]
-			msg.y = bbox[1]
-			msg.width =  bbox[2] - bbox[0]
-			msg.height = bbox[3] - bbox[1]
-			msg.object_class = CLASSES[cls_ind]
-			msg.p = score
-			pub_detections.publish(msg)
+	return (scores, boxes)
 			
 def imageCallback(im):
 	global CURR_IMAGE
@@ -112,15 +88,52 @@ def parseClasses(classFile):
 		content = f.readlines()
 	CLASSES = ['__background__'] + map(lambda x: x[:-1], content)
 
+def generateDetections (scores, boxes):
+	# Visualize detections for each class
+	CONF_THRESH = 0.8
+	NMS_THRESH = 0.3
+	for cls_ind, cls in enumerate(CLASSES[1:]):
+		cls_ind += 1 # because we skipped background
+		cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
+		cls_scores = scores[:, cls_ind]
+		dets = np.hstack((cls_boxes,
+						  cls_scores[:, np.newaxis])).astype(np.float32)
+		keep = nms(dets, NMS_THRESH)
+		dets = dets[keep, :]
+		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+		res = []
+		for i in inds:
+			bbox = dets[i, :4]
+			score = dets[i, -1]
+			
+			msg = Detection()
+			msg.x = bbox[0]
+			msg.y = bbox[1]
+			msg.width =  bbox[2] - bbox[0]
+			msg.height = bbox[3] - bbox[1]
+			msg.object_class = CLASSES[cls_ind]
+			msg.p = score
+			res.append(msg)
+		return res
+
+def getResultImage (detections, image):
+	# TODO
+	for detection in detections:
+		#image.drawDetection(detection)
+	return image
+	
 if __name__ == '__main__':
 	cfg.TEST.HAS_RPN = True  # Use RPN for proposals
 
 	args = parse_args()
 
-	pub_detections = rospy.Publisher('rcnn/detections', Detection, queue_size = 10)
+	pub_single = rospy.Publisher('rcnn/res/single', Detection, queue_size = 10)
+	pub_array = rospy.Publisher('rcnn/res/array', DetectionArray, queue_size = 2)
+	pub_full = rospy.Publisher('rcnn/res/full', DetectionFull, queue_size = 2)
+	
 	rospy.init_node('simpleDetect')
-	rospy.Subscriber("rcnn/image_raw", Image, imageCallback)
-
+	sub_image = rospy.Subscriber("rcnn/image_raw", Image, imageCallback)
+	
 	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0], 'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
 	caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models', NETS[args.demo_net][1])
 	classes = parseClasses(os.path.join(cfg.DATA_DIR, 'faster_rcnn_models', NETS['classes']))
@@ -148,7 +161,23 @@ if __name__ == '__main__':
 		if (RUNNING):
 			rospy.loginfo('Starting new detection')
 			rate.sleep()
-			detect(IMAGE)
+			detections = generateDetections(detect(IMAGE))
+			if (pub_single.getNumSubscribers() > 0):
+				for msg in detections:
+					pub_single.publish(msg)
+					
+			if (pub_array.getNumSubscribers() > 0 or pub_full.getNumSubscribers() > 0):
+				array = DetectionArray()
+				array.size = len(detections)
+				array.data = detections
+				
+				if (pub_full.getNumSubscribers() > 0):
+					msg = DetectionFull()
+					msg.detections = array
+					msg.image = getResultImage(detections, IMAGE)
+				else :
+					pub_array.publish(array)
+				
 			RUNNING = False
 		else:
 			rate.sleep()
