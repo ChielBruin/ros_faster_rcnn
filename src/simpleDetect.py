@@ -31,12 +31,6 @@ from cv_bridge import CvBridge, CvBridgeError
 
 RUNNING = False
 IMAGE = Image()
-
-NETS = {'vgg16': ('VGG16',
-                  'VGG16_faster_rcnn_final.caffemodel'),
-        'zf': ('ZF',
-                  'ZF_faster_rcnn_final.caffemodel'),
-        'classes': 'classes.txt'}
 	
 def detect(image):
 	"""Detect object classes in an image using pre-computed object proposals."""
@@ -62,28 +56,33 @@ def imageCallback(im):
 		IMAGE = im
 
 def parse_args():
-    """Parse input arguments."""
-    parser = argparse.ArgumentParser(description='Faster R-CNN demo')
-    parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
-                        default=0, type=int)
-    parser.add_argument('--cpu', dest='cpu_mode',
-                        help='Use CPU mode (overrides --gpu)',
-                        action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='vgg16')
+	"""Parse input arguments."""
+	parser = argparse.ArgumentParser(description='Faster R-CNN demo')
+	parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
+						default=0, type=int)
+	parser.add_argument('--cpu', dest='cpu_mode',
+						help='Use CPU mode (overrides --gpu)',
+						action='store_true')
+	parser.add_argument('--tresh', dest='treshold', help='The treshold for the detection', 
+						default=0.8, type=float)
+	parser.add_argument('--prototxt', dest='prototxt', help='The proto file', 
+						default='../libraries/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_alt_opt/faster_rcnn_test.pt')
+	parser.add_argument('--model', dest='model', help='The model file', 
+						default='../libraries/py-faster-rcnn/data/faster_rcnn_models/VGG16_faster_rcnn_final.caffemodel')
+	parser.add_argument('--classes', dest='classes', help='The file containing the classes', 
+						default='classes.txt')
 
-    args = parser.parse_args()
+	args = parser.parse_args()
 
-    return args
+	return args
     
 def parseClasses(classFile):
 	with open(classFile) as f:
 		content = f.readlines()
 	return ['__background__'] + map(lambda x: x[:-1], content)
 
-def generateDetections (scores, boxes, classes):
+def generateDetections (scores, boxes, classes, threshold):
 	# Visualize detections for each class
-	CONF_THRESH = 0.8
 	NMS_THRESH = 0.3	
 	res = []
 
@@ -95,7 +94,7 @@ def generateDetections (scores, boxes, classes):
 		keep = nms(dets, NMS_THRESH)
 		dets = dets[keep, :]
 
-		inds = np.where(dets[:, -1] >= CONF_THRESH)[0]
+		inds = np.where(dets[:, -1] >= threshold)[0]
 
 		for i in inds:
 			bbox = dets[i, :4]
@@ -129,9 +128,9 @@ if __name__ == '__main__':
 	rospy.init_node('simpleDetect')
 	sub_image = rospy.Subscriber("rcnn/image_raw", Image, imageCallback)
 	
-	prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0], 'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-	caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models', NETS[args.demo_net][1])
-	classes = parseClasses(os.path.join(cfg.DATA_DIR, 'faster_rcnn_models', NETS['classes']))
+	prototxt = os.path.join(os.path.dirname(__file__), args.prototxt)
+	caffemodel = os.path.join(os.path.dirname(__file__), args.model)
+	classes = parseClasses(os.path.join(os.path.dirname(__file__), args.classes))
 
 	if not os.path.isfile(caffemodel):
 		rospy.logerr('%s not found.\nDid you run ./data/script/fetch_faster_rcnn_models.sh?', caffemodel)
@@ -162,7 +161,7 @@ if __name__ == '__main__':
 			rate.sleep()
 			cv_image = bridge.imgmsg_to_cv2(IMAGE)
 			(scores, boxes) = detect(cv_image)
-			detections = generateDetections(scores, boxes, classes)
+			detections = generateDetections(scores, boxes, classes, args.treshold)
 			if (pub_single.get_num_connections() > 0):
 				for msg in detections:
 					pub_single.publish(msg)
