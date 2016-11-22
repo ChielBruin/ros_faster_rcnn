@@ -7,7 +7,7 @@ A [ROS] (http://www.ros.org/) wrapper for the [python implementation] (https://g
 ## Installation
 - Clone the repository
  - `git clone https://github.com/ChielBruin/ros_faster_rcnn.git --recursive`
- - run `git submodule --init --recursive`, when the modules are not correctly cloned
+ - run `git submodule update --init --recursive`, when the modules are not correctly cloned
 - Install py-faster-rcnn located in the libraries folder
  - Follow the guide provided [here](https://github.com/rbgirshick/py-faster-rcnn#installation-sufficient-for-the-demo)
  - If you are running Ubuntu 15 or 16, check [this](https://gist.github.com/wangruohui/679b05fcd1466bb0937f) or [this](https://github.com/rbgirshick/py-faster-rcnn#installation-sufficient-for-the-demo) guide (respectively) for the installation of the caffe dependency
