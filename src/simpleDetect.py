@@ -57,6 +57,11 @@ def imageCallback(im):
 
 def parse_args():
 	"""Parse input arguments."""
+	# Filter roslaunch arguments
+	sys.argv = filter(lambda arg: not arg.startswith('__'), sys.argv)
+	sys.argc = len(sys.argv)
+	
+	# Parse the other arguments
 	parser = argparse.ArgumentParser(description='Faster R-CNN demo')
 	parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
 						default=0, type=int)
