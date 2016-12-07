@@ -114,11 +114,16 @@ def generateDetections (scores, boxes, classes, threshold):
 			msg.p = score
 			res.append(msg)
 	return res
-
+	
 def getResultImage (detections, image):
-	# TODO
-	#for detection in detections:
-		#image.drawDetection(detection)
+	font = cv2.FONT_HERSHEY_SIMPLEX
+	textSize = cv2.getTextSize("test", font, 1, 2)
+	delta = (textSize[1] * .3, textSize[1] * 2.4)
+		
+	for det in detections:
+		cv2.rectangle(image, (det.x, det.y), (det.x + det.width, det.y + det.height), (0, 0, 255), 3)
+		text = "{}: p={:.2f}".format(det.object_class, det.p)
+		cv2.putText(image, text, (int(det.x + delta[0]), int(det.y + delta[1])), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 	return image
 	
 if __name__ == '__main__':
@@ -179,7 +184,7 @@ if __name__ == '__main__':
 				if (pub_full.get_num_connections() > 0):
 					msg = DetectionFull()
 					msg.detections = array
-					msg.image = getResultImage(detections, IMAGE)
+					msg.image =  bridge.cv2_to_imgmsg(getResultImage(detections, bridge.imgmsg_to_cv2(IMAGE)))
 					pub_full.publish(msg)
 				else :
 					pub_array.publish(array)
