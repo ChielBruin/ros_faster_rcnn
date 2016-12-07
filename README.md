@@ -18,5 +18,3 @@ A [ROS] (http://www.ros.org/) wrapper for the [python implementation] (https://g
 This ROS node is being developed as a part of [this](https://github.com/ChielBruin/tomatenplukkers) repository. The wrapper functions correctly, but some features are still missing:
 - A ROS service to send an image and receive the detections
  - This function will execute on the CPU due to [this] (http://answers.ros.org/question/240998/py-faster-rcnn-network-detection-runs-on-cpu-through-ros-callback-function/) issue, therefore it is tricky to implement correctly
-- A ROS message containing the resulting image
- - this message now simply contains the original image
