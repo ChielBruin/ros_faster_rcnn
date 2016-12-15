@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ros_faster_rcnn)
 
 find_package(catkin REQUIRED
+	roslaunch
 	message_generation
 	std_msgs
 	cv_bridge
@@ -72,6 +73,8 @@ catkin_install_python(PROGRAMS src/imageLoader.py
 #############
 ## Testing ##
 #############
+
+roslaunch_add_file_check(launch)
 
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_ROS-faster-rcnn.cpp)
