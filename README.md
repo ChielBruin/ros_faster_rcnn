@@ -1,5 +1,5 @@
 # ROS_faster_rcnn
-A [ROS] (http://www.ros.org/) wrapper for the [python implementation] (https://github.com/rbgirshick/py-faster-rcnn) of [faster-RCNN] (https://github.com/ShaoqingRen/faster_rcnn). This wrapper is based on `demo.py`, that is included in the python implementation. It publishes messages containing the class, position, size and probabiity of the detected objects in the received images.
+A [ROS](http://www.ros.org/) wrapper for the [python implementation](https://github.com/rbgirshick/py-faster-rcnn) of [faster-RCNN](https://github.com/ShaoqingRen/faster_rcnn). This wrapper is based on `demo.py`, that is included in the python implementation. It publishes messages containing the class, position, size and probability of the detected objects in the received images.
 > **Faster** R-CNN is an object detection framework based on deep convolutional networks, which includes a Region Proposal Network (RPN) and an Object Detection Network. Both networks are trained for sharing convolutional layers for fast testing. 
 > 
 > Faster R-CNN was initially described in an [arXiv tech report](http://arxiv.org/abs/1506.01497).
